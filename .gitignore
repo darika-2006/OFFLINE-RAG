@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Gradio cache
+.gradio/
+
+# Virtual environment
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Index files (large binary files)
+index/
+*.npy
+*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# Data files (if large)
+data/raw/
