@@ -1,0 +1,110 @@
+/* ---------- Global ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background: linear-gradient(135deg, #e9efff, #f6f8ff);
+  color: #1f2937;
+}
+
+/* ---------- Containers ---------- */
+.page-center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Headings ---------- */
+h1,
+h2,
+h3 {
+  margin-bottom: 20px;
+  color: #1e3a8a;
+}
+
+/* ---------- Buttons ---------- */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background: #1e40af;
+}
+
+/* ---------- Inputs ---------- */
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #dbeafe;
+  outline: none;
+  font-size: 14px;
+}
+
+input:focus {
+  border-color: #2563eb;
+}
+
+/* ---------- Role Buttons ---------- */
+.role-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.role-buttons button {
+  width: 100%;
+}
+
+/* ---------- Admin & Employee Cards ---------- */
+.section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.section h3 {
+  margin-bottom: 12px;
+}
+
+/* ---------- Answer Box ---------- */
+.answer-box {
+  margin-top: 15px;
+  padding: 14px;
+  background: #eff6ff;
+  border-radius: 10px;
+  font-size: 14px;
+}
