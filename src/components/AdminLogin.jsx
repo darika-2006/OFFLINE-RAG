@@ -31,4 +31,5 @@ export default function AdminLogin({ setAdminAuth }) {
       </div>
     </div>
   );
+  
 }
