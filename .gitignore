@@ -23,4 +23,4 @@ index/
 .idea/
 
 # Data files (if large)
-data/raw/
+data/raw/venv/

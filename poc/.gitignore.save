@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+
+# Gradio
+.gradio/
+
+# FAISS / embeddings
+index/*.npy
+index/*.pkl
+
+# OS
+.DS_Store
+
+# PDFs
+*.pdf
