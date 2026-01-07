@@ -36,7 +36,10 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 # ---------------- MODEL & INDEX ----------------
-model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f" Embedding Device: {device}")
+model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2",
+                            device = device)
 
 # Load FAISS index
 INDEX_DIR = "index"
@@ -90,23 +93,24 @@ def generate_answer(query: str, context_chunks: list) -> str:
         return "No relevant information found in the knowledge base."
     
     # Limit context
-    context = "\n\n---\n\n".join(context_chunks[:2])[:1500]
+    context = "\n\n---\n\n".join(context_chunks[:4])[:4500]
     
-    prompt = f"""Answer briefly based ONLY on this context:
+    prompt = f"""Using the context below, explain the concept clearly in your own words.
+If the context lists topics or references, infer the general meaning:
 
 Context:
 {context}
 
 Question: {query}
 
-Answer (2-3 sentences):"""
+Answer (5-6 sentences):"""
     
     try:
         import time
         start = time.time()
         
         # Detect GPU availability
-        has_gpu = torch.cuda.is_available()
+        has_gpu = False
         
         if has_gpu:
             gpu_name = torch.cuda.get_device_name(0)
@@ -116,14 +120,14 @@ Answer (2-3 sentences):"""
             # Try GPU first with memory limit
             try:
                 response = ollama.chat(
-                    model="mistral",
+                    model="phi3:mini",
                     messages=[{"role": "user", "content": prompt}],
                     options={
-                        "num_predict": 100,
-                        "temperature": 0.3,
-                        "num_gpu": 1,           # Use GPU
-                        "num_ctx": 2048,
-                        "gpu_layers": 33        # Load layers on GPU
+                        "num_predict": 150,
+                        "temperature": 0.2,
+                        "num_gpu": 0,
+                        "num_thread": 6,           # Use GPU
+                        "num_ctx": 1024,  
                     }
                 )
                 elapsed = time.time() - start
@@ -138,14 +142,14 @@ Answer (2-3 sentences):"""
         # CPU Mode (either no GPU or GPU failed)
         print(f"   💻 Using CPU mode")
         response = ollama.chat(
-            model="mistral",
+            model="phi3:mini",
             messages=[{"role": "user", "content": prompt}],
             options={
-                "num_predict": 80,          # Shorter for CPU
-                "temperature": 0.3,
+                "num_predict": 256,          # Shorter for CPU
+                "temperature": 0.2,
                 "num_gpu": 0,               # Force CPU
-                "num_thread": 4,            # CPU threads
-                "num_ctx": 1024             # Smaller context for CPU
+                "num_thread": 8,            # CPU threads
+                "num_ctx": 2048             # Smaller context for CPU
             }
         )
         
@@ -198,15 +202,20 @@ def query_rag(data: QueryRequest):
 
     # ---------- FAISS SEARCH ----------
     t1 = time.time()
-    K_FAISS = 10
+    K_FAISS = 15
     query_embedding = model.encode([query], normalize_embeddings=True)
+    encode_time = time.time() - t1
+
+    t2 = time.time()
     D, I = index.search(query_embedding, k=min(K_FAISS, index.ntotal))
-    
+    faiss_time = time.time() - t2
+
+    print(f"   ⏱️ Encode: {encode_time:.2f}s | FAISS: {faiss_time:.2f}s")
+
     # Convert FAISS positions to chunk_ids using mapping
     faiss_positions = [int(x) for x in I[0] if x != -1]
     faiss_chunk_ids = [chunk_id_mapping[pos] for pos in faiss_positions if pos < len(chunk_id_mapping)]
     
-    print(f"   ⏱️ FAISS: {time.time()-t1:.2f}s")
     print(f"   📍 Positions: {faiss_positions}")
     print(f"   🆔 Chunk IDs: {faiss_chunk_ids}")
 
@@ -247,14 +256,14 @@ def query_rag(data: QueryRequest):
     # ---------- BM25 RE-RANKING ----------
     t3 = time.time()
     chunk_texts = list(filtered_chunks.values())
-    tokenized_chunks = [text.split() for text in chunk_texts]
+    tokenized_chunks = [text.lower().split() for text in chunk_texts]
     
     bm25 = BM25Okapi(tokenized_chunks)
-    tokenized_query = query.split()
+    tokenized_query = query.lower().split() 
     bm25_scores = bm25.get_scores(tokenized_query)
 
-    # Get top 3
-    top_indices = np.argsort(bm25_scores)[-3:][::-1]
+    # Get top 5
+    top_indices = np.argsort(bm25_scores)[-5:][::-1]
     top_chunks = [chunk_texts[i] for i in top_indices]
     print(f"   ⏱️ BM25: {time.time()-t3:.2f}s")
 
@@ -275,6 +284,7 @@ def query_rag(data: QueryRequest):
 @app.post("/query/stream")
 async def query_rag_stream(data: QueryRequest):
     """Streaming version of query endpoint"""
+    import time
     
     async def generate():
         query = data.query.strip()
@@ -290,9 +300,14 @@ async def query_rag_stream(data: QueryRequest):
         
         # ---------- FAISS SEARCH ----------
         t1 = time.time()
-        K_FAISS = 10
+        K_FAISS = 15
         query_embedding = model.encode([query], normalize_embeddings=True)
+        encode_time = time.time() - t1
+
+        t2 = time.time()
         D, I = index.search(query_embedding, k=min(K_FAISS, index.ntotal))
+        faiss_time = time.time() - t2
+        print(f"   ⏱️ Encode: {encode_time:.2f}s | FAISS: {faiss_time:.2f}s")
         
         # Convert FAISS positions to chunk_ids using mapping
         faiss_positions = [int(x) for x in I[0] if x != -1]
@@ -390,7 +405,7 @@ def check_llm_health():
         if ollama_running:
             try:
                 response = ollama.chat(
-                    model="mistral",
+                    model="phi3:mini",
                     messages=[{"role": "user", "content": "test"}],
                     options={"num_predict": 5}
                 )

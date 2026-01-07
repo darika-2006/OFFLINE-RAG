@@ -137,7 +137,7 @@ if page == "📤 Upload Documents":
                         "allowed_roles": allowed_roles.lower(),
                         "uploaded_by": uploaded_by
                     },
-                    timeout=300
+                    timeout=600
                 )
 
                 if r.status_code == 200:
@@ -187,7 +187,7 @@ elif page == "🔍 Query Documents":
                     "http://localhost:8000/query/stream",
                     json={"query": query, "role": role},
                     stream=True,
-                    timeout=300
+                    timeout=600
                 )
 
                 for line in response.iter_lines():
@@ -203,6 +203,8 @@ elif page == "🔍 Query Documents":
                                 status_box.info(data["message"])
 
                             # ---- FINAL ----
+                            st.write(data)
+
                             if data["status"] == "complete":
                                 status_box.success("✅ Answer Generated")
 

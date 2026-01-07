@@ -47,7 +47,8 @@ except Exception as e:
     raise
 
 # ---------------- MODEL ----------------
-model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2",
+        device="cpu")
 
 # ---------------- LOAD OR CREATE FAISS INDEX ----------------
 FAISS_INDEX_PATH = os.path.join(INDEX_DIR, "hal_index.faiss")
@@ -97,7 +98,7 @@ def root():
     }
 
 # ---------------- TEXT EXTRACTION ----------------
-def extract_text_from_pdf(pdf_path, max_words=350, overlap=70):
+def extract_text_from_pdf(pdf_path, max_words=350, overlap=40):
     pdf = pdfium.PdfDocument(pdf_path)
     chunks = []
 
